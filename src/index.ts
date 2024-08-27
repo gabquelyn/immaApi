@@ -1,12 +1,42 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express} from "express";
 import logger, { logEvents } from "./middlewares/logger";
 import cookierParser from "cookie-parser";
 import errorHandler from "./middlewares/errorHandler";
 import dotenv from "dotenv";
 import connectDB from "./utils/connectDB";
 import mongoose from "mongoose";
-import path from "path"
+import path from "path";
 import authRouter from "./routes/authRoutes";
+import swaggerJSDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
+
+const swaggerDefinition = {
+  openapi: "3.0.0",
+  info: {
+    title: "immaApi",
+    version: "1.0.0",
+    description: "Api endpoints for the imma",
+  },
+  servers: [
+    {
+      url: "",
+      description: "Production server",
+    },
+  ],
+  tags: [
+    {
+      name: "Authentication",
+      description: "Operations about authentication",
+    },
+  ],
+};
+
+const options = {
+  swaggerDefinition,
+  apis: ["./src/routes/*.ts"], // Path to the API docs
+};
+
+const swaggerSpec = swaggerJSDoc(options);
 
 dotenv.config();
 connectDB();
@@ -19,13 +49,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/", express.static(path.join(__dirname, "public")));
 app.use(cookierParser());
 
-app.use((req: Request, res: Response) => {
-  return res.status(200).json({ message: "Welcome to server" });
-});
+app.use("/auth", authRouter);
 
-app.use('/auth', authRouter)
-
-
+app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(errorHandler);
 mongoose.connection.on("open", () => {
   console.log("Connected to DB");
@@ -41,4 +67,3 @@ mongoose.connection.on("error", (err) => {
     "mongoErr.log"
   );
 });
-
