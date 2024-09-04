@@ -19,7 +19,7 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: "",
+      url: "https://immaapi.onrender.com/",
       description: "Production server",
     },
   ],
