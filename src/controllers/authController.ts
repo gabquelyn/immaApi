@@ -11,6 +11,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs";
 import { v4 as uuid } from "uuid";
 import { Types } from "mongoose";
+import { validationResult } from "express-validator";
 
 export const loginController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
@@ -91,6 +92,8 @@ export const loginController = expressAsyncHandler(
 
 export const registerStudentController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
+    const error = validationResult(req);
+    if (error) return res.status(400).json(error.array());
     const { email, password, firstname, lastname, dob, nationality, phone } =
       req.body;
     const existing = await Student.findOne({ email }).lean().exec();
@@ -246,6 +249,8 @@ export const restPasswordController = expressAsyncHandler(
 
 export const registerUniversityController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
+    const error = validationResult(req);
+    if (error) return res.status(400).json(error.array());
     const { email, password, province, zipcode, name, phone } = req.body;
     const existing = await University.findOne({ email }).lean().exec();
     if (existing)
@@ -335,7 +340,7 @@ export const refreshController = expressAsyncHandler(
             UserInfo: {
               email: decoded.email,
               userId: _id,
-              type: decoded.type
+              type: decoded.type,
             },
           },
           process.env.ACCESS_TOKEN_SECRET as string,

@@ -1,4 +1,4 @@
-import express, { Express} from "express";
+import express, { Express } from "express";
 import logger, { logEvents } from "./middlewares/logger";
 import cookierParser from "cookie-parser";
 import errorHandler from "./middlewares/errorHandler";
@@ -9,6 +9,7 @@ import path from "path";
 import authRouter from "./routes/authRoutes";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import cors from "cors";
 
 const swaggerDefinition = {
   openapi: "3.0.0",
@@ -44,6 +45,7 @@ const app: Express = express();
 const port = process.env.PORT || 8080;
 
 app.use(logger);
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/", express.static(path.join(__dirname, "public")));
@@ -52,6 +54,7 @@ app.use(cookierParser());
 app.use("/auth", authRouter);
 
 app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.use(errorHandler);
 mongoose.connection.on("open", () => {
   console.log("Connected to DB");
