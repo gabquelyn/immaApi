@@ -8,8 +8,8 @@ export default async function sendMail(
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: Boolean(process.env.SMTP_SECURE),
+      // port: Number(process.env.SMTP_PORT),
+      // secure: Boolean(process.env.SMTP_SECURE),
       auth: {
         user: process.env.SMTP_USERNAME,
         pass: process.env.SMTP_PASSWORD,
@@ -24,7 +24,7 @@ export default async function sendMail(
     });
     console.log("Email sent successfully");
   } catch (err) {
-    console.log(err);
+    console.log({mailError: err});
     logEvents(`${err}`, "mailErrorLog.log");
   }
 }

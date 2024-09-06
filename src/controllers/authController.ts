@@ -71,7 +71,6 @@ export const loginController = expressAsyncHandler(
       String(process.env.ACCESS_TOKEN_SECRET),
       { expiresIn: "1h" }
     );
-
     // create the refresh token
     const refreshToken = jwt.sign(
       { email, type },
@@ -81,7 +80,7 @@ export const loginController = expressAsyncHandler(
 
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: false,
       sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -93,7 +92,8 @@ export const loginController = expressAsyncHandler(
 export const registerStudentController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const error = validationResult(req);
-    if (error) return res.status(400).json(error.array());
+    if (!error.isEmpty())
+      return res.status(400).json({ errors: error.array() });
     const { email, password, firstname, lastname, dob, nationality, phone } =
       req.body;
     const existing = await Student.findOne({ email }).lean().exec();
@@ -121,7 +121,7 @@ export const registerStudentController = expressAsyncHandler(
       token: crypto.randomBytes(32).toString("hex"),
     });
 
-    const url = `${process.env.FRONTEND_URL}/auth/${newUser._id}/verify/${verificationToken.token}`;
+    const url = `${process.env.FRONTEND_URL}/auth/${newUser._id}/student/verify/${verificationToken.token}`;
     // send the verification url via email
     await sendMail(newUser.email, "Verify email", url);
     res
@@ -136,7 +136,7 @@ export const logoutController = expressAsyncHandler(
     if (!cookies?.jwt) return res.sendStatus(204); //no content;
     res.clearCookie("jwt", {
       httpOnly: true,
-      secure: true,
+      secure: false,
       sameSite: "none",
     });
     res.json({ message: "Cookie cleared" });
@@ -250,7 +250,7 @@ export const restPasswordController = expressAsyncHandler(
 export const registerUniversityController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const error = validationResult(req);
-    if (error) return res.status(400).json(error.array());
+    if (!error.isEmpty()) return res.status(400).json(error.array());
     const { email, password, province, zipcode, name, phone } = req.body;
     const existing = await University.findOne({ email }).lean().exec();
     if (existing)
@@ -262,21 +262,25 @@ export const registerUniversityController = expressAsyncHandler(
       return res.status(400).json({
         message: "No document attatched to the request",
       });
-    const s3 = new S3Client({ region: process.env.AWS_REGION || "eu-north-1" });
+    const s3 = new S3Client({ region: process.env.AWS_REGION });
     const documentKeys: string[] = [];
 
     for (const file of req.files as Express.Multer.File[]) {
       const fileContent = fs.readFileSync(file.path);
       const fileKey = `${file.filename}_${uuid()}`;
-      const putCommand = new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET as string,
-        Body: fileContent,
-        Key: fileKey,
-      });
-      const s3Response = await s3.send(putCommand);
-      console.log(s3Response);
-      documentKeys.push(fileKey);
-      fs.unlinkSync(file.path);
+      try {
+        const putCommand = new PutObjectCommand({
+          Bucket: process.env.AWS_S3_BUCKET as string,
+          Body: fileContent,
+          Key: fileKey,
+        });
+        const s3Response = await s3.send(putCommand);
+        console.log(s3Response);
+        documentKeys.push(fileKey);
+        fs.unlinkSync(file.path);
+      } catch (err) {
+        console.log(err);
+      }
     }
 
     const newUniversity = await University.create({
@@ -297,7 +301,7 @@ export const registerUniversityController = expressAsyncHandler(
       token: crypto.randomBytes(32).toString("hex"),
     });
 
-    const url = `${process.env.FRONTEND_URL}/auth/${newUniversity._id}/verify/${verificationToken.token}`;
+    const url = `${process.env.FRONTEND_URL}/auth/${newUniversity._id}/university/verify/${verificationToken.token}`;
     // send the verification url via email
     await sendMail(newUniversity.email, "Verify email", url);
     res
@@ -309,31 +313,29 @@ export const registerUniversityController = expressAsyncHandler(
 export const refreshController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const cookies = req.cookies;
-    if (!cookies?.jwt) return res.status(403).json({ message: "Unauthorized" });
+    if (!cookies?.jwt)
+      return res.status(403).json({ message: "Unauthorized, no cookie found" });
     const refreshToken = cookies.jwt;
     // verify the refresh token
     jwt.verify(
       refreshToken,
       process.env.REFRESH_TOKEN_SECRET as string,
       async (error: any, decoded: any) => {
-        if (error) return res.status(403).json({ message: "Forbidden" });
+        if (error) return res.status(403).json({ message: "Forbidden", error });
         let _id: Types.ObjectId;
         if (decoded.type === "university") {
           const university = await University.findOne({
-            where: { email: decoded?.email },
+            email: decoded?.email,
           });
           if (!university)
             return res.status(400).json({ message: "Unauthorized" });
           _id = university._id;
         } else {
-          const student = await Student.findOne({
-            where: { email: decoded?.email },
-          });
+          const student = await Student.findOne({ email: decoded?.email });
           if (!student)
             return res.status(400).json({ message: "Unauthorized" });
           _id = student._id;
         }
-
         // create the access token
         const accessToken = jwt.sign(
           {

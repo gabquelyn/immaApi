@@ -6,6 +6,7 @@ import {
   registerStudentController,
   forgotPasswordController,
   restPasswordController,
+  registerUniversityController,
   refreshController,
 } from "../controllers/authController";
 import { body } from "express-validator";
@@ -23,10 +24,15 @@ const authRouter = Router();
  */
 
 authRouter.route("/").post(loginController);
-authRouter.route("/verify").post(verifyController);
+
+authRouter.route("/verify/:type/:userId/:token").get(verifyController);
+
 authRouter.route("/logout").post(logoutController);
+
 authRouter.route("/forgot").post(forgotPasswordController);
-authRouter.route("/reset").post(restPasswordController);
+
+authRouter.route("/reset/:token").post(restPasswordController);
+
 authRouter.route("/refresh").get(refreshController);
 
 authRouter.route("/register/student").post(
@@ -38,7 +44,7 @@ authRouter.route("/register/student").post(
       .withMessage("Password too weak"),
     body("phone").isMobilePhone("any").withMessage("invalid mobile number"),
     body("firstname").notEmpty().withMessage("First name is required"),
-    body("lastname").notEmpty().withMessage("First name is required"),
+    body("lastname").notEmpty().withMessage("Last name is required"),
     body("dob")
       .custom((val, { req }) =>
         moment(val).isSameOrBefore(moment().subtract(18, "years"))
@@ -57,13 +63,12 @@ authRouter
       body("email").isEmail().withMessage("invalid email address"),
       body("password")
         .isLength({ min: 9 })
-        .isAlphanumeric()
         .withMessage("Password too weak"),
       body("phone").isMobilePhone("any").withMessage("invalid mobile number"),
       body("name").notEmpty().withMessage("University name is required"),
       body("zipcode").isPostalCode("any").withMessage("Invalid postal code"),
       body("province").notEmpty().withMessage("invalid province"),
     ],
-    registerStudentController
+    registerUniversityController
   );
 export default authRouter;
