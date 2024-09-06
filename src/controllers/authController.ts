@@ -29,7 +29,7 @@ export const loginController = expressAsyncHandler(
     } else if (type === "student") {
       const foundStudent = await Student.findOne({ email }).lean().exec();
       if (!foundStudent)
-        return res.status(400).json({ message: "Student does not exist" });
+        return res.status(404).json({ message: "Student does not exist" });
       dbPasword = foundStudent.password;
       verified = foundStudent.verified;
       _id = foundStudent._id;
