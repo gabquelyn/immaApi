@@ -10,6 +10,7 @@ import authRouter from "./routes/authRoutes";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import cors from "cors";
+import scholarshipRoute from "./routes/scholarshipRoutes";
 
 const swaggerDefinition = {
   openapi: "3.0.0",
@@ -28,6 +29,10 @@ const swaggerDefinition = {
     {
       name: "Authentication",
       description: "Operations about authentication",
+    },
+    {
+      name: "University",
+      description: "Operations about universities",
     },
   ],
 };
@@ -52,7 +57,7 @@ app.use("/", express.static(path.join(__dirname, "public")));
 app.use(cookierParser());
 
 app.use("/auth", authRouter);
-
+app.use("/scholarship", scholarshipRoute);
 app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(errorHandler);

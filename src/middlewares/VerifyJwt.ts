@@ -21,6 +21,7 @@ export default async function VerifyJWT(
       }
       (req as CustomRequest).email = decode.UserInfo.email;
       (req as CustomRequest).id = decode.UserInfo.userId;
+      (req as CustomRequest).type = decode.UserInfo.type;
       next();
     }
   );

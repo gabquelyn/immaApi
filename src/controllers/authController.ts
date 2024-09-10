@@ -276,7 +276,9 @@ export const registerUniversityController = expressAsyncHandler(
         });
         const s3Response = await s3.send(putCommand);
         console.log(s3Response);
-        documentKeys.push(fileKey);
+        documentKeys.push(
+          `https://${process.env.AWS_S3_BUCKET}.s3.eu-north-1.amazonaws.com/${fileKey}`
+        );
         fs.unlinkSync(file.path);
       } catch (err) {
         console.log(err);
