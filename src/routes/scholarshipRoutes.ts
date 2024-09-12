@@ -26,6 +26,8 @@ scholarshipRoute.use(VerifyJWT);
  *     tags:
  *       - University
  *     description: Create a scholarship by a university.
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -94,6 +96,8 @@ scholarshipRoute.use(VerifyJWT);
  *     summary: Returns a list of the created scholarships of a university.
  *     tags:
  *       - University
+ *     security:
+ *       - bearerAuth: []
  *     description: Returns a list of scholarships associated with a particular university.
  *     responses:
  *       200:
@@ -151,7 +155,6 @@ scholarshipRoute.use(VerifyJWT);
  *         description: Internal server error.
  */
 
-
 scholarshipRoute
   .route("/university")
   .post(
@@ -168,14 +171,42 @@ scholarshipRoute
       ].map((name) => body(name).notEmpty().withMessage(`${name} is required`)),
       ...["start", "end"].map((name) =>
         body(name)
-          .isDate()
-          .custom((val, { req }) => moment(val).isSameOrAfter(moment(), "day"))
-          .withMessage(`Invalid ${name} date received`)
+          .custom((val, { req }) => {
+            console.log(moment(val).isSameOrAfter(moment(), "day"));
+            return moment(val).isSameOrAfter(moment(), "day");
+          })
+          .withMessage(
+            `Invalid ${name} date received, date must be greater than today`
+          )
       ),
     ],
     createScholarShip
   )
   .get(getScholarships);
 
+/**
+ * @swagger
+ * /scholarship/university/{id}:
+ *   delete:
+ *     summary: Returns a list of the created scholarships of a university.
+ *     tags:
+ *       - University
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns a list of scholarships associated with a particular university.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the scholarship.
+ *         example: 66dedcf56c91339e212e1c31
+ *     responses:
+ *       404:
+ *         description: University does not exist.
+ *       200:
+ *         description: University deleted successfully.
+ */
 scholarshipRoute.route("/university/:scholarshipId").delete(deleteScholarShip);
 export default scholarshipRoute;

@@ -6,8 +6,13 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs";
 import { v4 as uuid } from "uuid";
 import { CustomRequest } from "../../types";
+import { validationResult } from "express-validator";
 export const createScholarShip = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
     const existingUniversity = await University.findById(
       (req as CustomRequest).id
     );
@@ -77,13 +82,15 @@ export const deleteScholarShip = expressAsyncHandler(
       .lean()
       .exec();
     if (!existingUniversity)
-      return res.status(400).json({ message: "university does not exist" });
+      return res.status(404).json({ message: "university does not exist" });
     const flagged = await Scholarship.findOneAndDelete({
       university: existingUniversity._id,
       _id: scholarshipId,
     })
       .lean()
       .exec();
-    return res.status(200).json({ message: "Successfully deleted" });
+    return res
+      .status(200)
+      .json({ message: "Successfully deleted" + flagged?._id });
   }
 );

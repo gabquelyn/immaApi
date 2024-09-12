@@ -11,11 +11,12 @@ import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import cors from "cors";
 import scholarshipRoute from "./routes/scholarshipRoutes";
+import applicationRoutes from "./routes/applicationRoutes";
 
 const swaggerDefinition = {
   openapi: "3.0.0",
   info: {
-    title: "immaApi",
+    title: "imma Api",
     version: "1.0.0",
     description: "Api endpoints for the imma",
   },
@@ -25,6 +26,15 @@ const swaggerDefinition = {
       description: "Production server",
     },
   ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
+  },
   tags: [
     {
       name: "Authentication",
@@ -33,6 +43,10 @@ const swaggerDefinition = {
     {
       name: "University",
       description: "Operations about universities",
+    },
+    {
+      name: "Application",
+      description: "Operations about applications",
     },
   ],
 };
@@ -58,6 +72,7 @@ app.use(cookierParser());
 
 app.use("/auth", authRouter);
 app.use("/scholarship", scholarshipRoute);
+app.use("/application", applicationRoutes);
 app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(errorHandler);
